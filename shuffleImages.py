@@ -1,11 +1,17 @@
 import cv2
 import random
 from os import listdir
-from os.path import isfile,join 
+from os.path import join
+
+#each image provided is divided into various fragments. This class use an an array
+#of fragments to hold each pixels fragment in the image
 class ImageClass:
     def __init__(self, fragments, name):
         self.fragments = fragments
         self.name = name
+
+#this class is used to hold the properties of each fragments. we can later allow it
+#to capture other properties of the fragments like the RGB values sha 
 class fragment:
     def __init__(self,oldindex,newindex,start_row,end_row,start_col,end_col):
         self.oldindex = oldindex
@@ -15,6 +21,7 @@ class fragment:
         self.end_row = end_row
         self.end_col = end_col
 
+#@function to get all the fragments and its properties from each image
 def getFragments(path): 
     p = 64
     m = 512//p
@@ -27,7 +34,8 @@ def getFragments(path):
             arr.append(fragment(index,index,start_row,end_row,start_col,end_col))
             index += 1 
     return arr        
-
+#this is the main function that does the shuffling.
+#for now, I'm just shuffling it randomlys
 def shuffle(fragments): 
     arr = [i for i in range(len(fragments))]
     random.shuffle(arr) 
@@ -38,15 +46,16 @@ def shuffle(fragments):
     return fragments 
 
 if __name__ == '__main__':
-    ImageClasses = []
-    mypath = "C:/Users/Harjacober/Desktop/HuaweiHornoCup/data_train/64" 
+    ImageClasses = [] #stores all instance of each Image
+    mypath = "C:/Users/Harjacober/Desktop/HuaweiHornoCup/data_train/64"
+    #list all the image files in tne data folder
     for file in listdir(mypath): 
         img_file = join(mypath, file)  
-        fragments = getFragments(img_file) 
-        ImageClasses.append(ImageClass(fragments, file)) 
+        fragments = getFragments(img_file) #get all fragments of this image file 
+        ImageClasses.append(ImageClass(fragments, file))   
     f = open("data_train_64_answer.txt", "w")
-    for each in ImageClasses: 
-        ans = [i.newindex for i in shuffle(each.fragments)] 
+    for each in ImageClasses: #loop through each image one by one
+        ans = [i.newindex for i in shuffle(each.fragments)]  #shuffle the fragments
         output = ' '.join(list(map(str,ans))) 
         f.write(each.name+"\n"+output+"\n") 
     f.close()
