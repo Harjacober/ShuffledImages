@@ -5,6 +5,7 @@ from os.path import join
 from collections import deque
 import pixel_comparison as pc
 import numpy as np
+ 
 
 #each image provided is divided into various fragments. This class use an an array
 #of fragments to hold each pixels fragment in the image
@@ -80,56 +81,44 @@ def compareedges(fragments):
             each_row.append(best[1]) if best[2] == "aright" else each_row.appendleft(best[1])
             fragments.remove(best[1])
         row_holder.append(each_row)
-    #compare top and bottom edges
+    #compare top and bottom edges TODO: inspect this method well
+    """
+    Without this part, the algorithm gives a better score but this part is supposed
+    to macth the tops and bottonms but i don't know why it's making it worse.
+    i will inspect it later
+    Incase you want to test, u can remove all the code below this line in this function
+    and return <row_holder> instead of <ans>
+    """
     start = row_holder.pop() 
     ans = deque([start])
     for i in range(int(p)-1): 
-        top = ans[0][0].edges.top
-        bottom = ans[0][-1].edges.bottom
+        top = ans[0][-1].edges.top
+        bottom = ans[-1][-1].edges.bottom
         bestHere= (float('inf'),None,"") 
-        for ro in row_holder: 
-            for each in ro:
-                tsim = pixel_sim(top, each.edges.bottom)
-                bsim = pixel_sim(bottom, each.edges.top)
-                bestHere = min(bestHere,(tsim, ro,"atop"),(bsim, ro,"abottom"),key=lambda x:x[0])
-                
+        for ro in row_holder:
+            tsim = pixel_sim(top, ro[-1].edges.bottom)
+            bsim = pixel_sim(bottom, ro[-1].edges.top)
+            bestHere = min(bestHere,(tsim, ro,"atop"),(bsim, ro,"abottom"),key=lambda x:x[0])
+       
         ans.append(bestHere[1]) if bestHere[2] == "atop" else ans.appendleft(bestHere[1]) 
         row_holder.remove(bestHere[1]) 
         
-    return ans         
-    
-def sift_sim(img_a, img_b): 
-  # initialize the sift feature detector
-  orb = cv2.ORB_create() 
- 
-  # find the keypoints and descriptors with SIFT
-  kp_a, desc_a = orb.detectAndCompute(img_a, None)
-  kp_b, desc_b = orb.detectAndCompute(img_b, None)
-
-  # initialize the bruteforce matcher
-  bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-
-  # match.distance is a float between {0:100} - lower means more similar
-  matches = bf.match(desc_a, desc_b)
-  similar_regions = [i for i in matches if i.distance < 70]
-  if len(matches) == 0:
-    return 0
-  return len(similar_regions) / len(matches)
+    return ans
 
 def pixel_sim(img_a, img_b):  
-  return np.sum(np.absolute(img_a - img_b)) / (pc.height*pc.width) / 255 
+    return np.sum(np.absolute(img_a - img_b)) / (pc.height*pc.width) / 255 
 
 
 
 if __name__ == '__main__':
     ImageClasses = [] #stores all instance of each Image
-    mypath = "C:/Users/Harjacober/Desktop/data/data_test1_blank/64"
+    mypath = "C:/Users/Harjacober/Desktop/data/data_test2_blank/64"
     #list all the image files in tne data folder
     for file in listdir(mypath): 
         img_file = join(mypath, file)  
         fragments = getFragments(img_file) #get all fragments of this image file 
         ImageClasses.append(ImageClass(fragments, file))   
-    f = open("my_test_answer3.txt", "w")
+    f = open("my_test_answer2.txt", "w")
     i=1
     for each in ImageClasses: #loop through each image one by one
         print(i)
