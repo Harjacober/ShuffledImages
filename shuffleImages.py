@@ -5,7 +5,7 @@ from os.path import join
 from collections import deque
 import pixel_comparison as pc
 import numpy as np
- 
+from statistics import variance as mn 
 
 #each image provided is divided into various fragments. This class use an an array
 #of fragments to hold each pixels fragment in the image
@@ -32,6 +32,7 @@ class Pixel:
 #@function to get all the fragments and its properties from each image
 def getFragments(path):
     #image = cv2.imread(path)
+    #cv2.imshow("",image[60:64,0:64])
     image = pc.get_img(path) #read image
     p = 64 #size of pixel of each frsgment. change to 32 or 16 for other datasets
     m = 512//p
@@ -58,7 +59,7 @@ def getFragments(path):
 
 #generator function to arrange the imaages and generate the correct index position 
 def shuffle(fragments):
-    row_holder = compareedges(fragments)
+    row_holder = compareedges(fragments) 
     for each in row_holder:
         for i in each:
             yield i.index
@@ -67,10 +68,10 @@ def compareedges(fragments):
     p = 512//64  #denominator is the size of pixel of each frsgment. change to 32 or 16 for other datasets
     row_holder = deque()
     #compare left and right edges
-    for i in range(int(p)):
+    for i in range(p):
         start = fragments.pop() 
         each_row = deque([start]) 
-        for i in range(int(p)-1):
+        for i in range(p-1):
             right = each_row[-1].edges.right
             left = each_row[0].edges.left
             best= (float('inf'),None,"") 
@@ -91,16 +92,20 @@ def compareedges(fragments):
     """
     start = row_holder.pop() 
     ans = deque([start])
-    for i in range(int(p)-1): 
-        top = ans[0][-1].edges.top
-        bottom = ans[-1][-1].edges.bottom
+    for i in range(p-1): 
+        top = ans[0]
+        bottom = ans[-1]
         bestHere= (float('inf'),None,"") 
         for ro in row_holder:
-            tsim = pixel_sim(top, ro[-1].edges.bottom)
-            bsim = pixel_sim(bottom, ro[-1].edges.top)
-            bestHere = min(bestHere,(tsim, ro,"atop"),(bsim, ro,"abottom"),key=lambda x:x[0])
+            t,b = 0,0
+            for i in range(p):
+                tsim = pixel_sim(top[i].edges.top, ro[i].edges.bottom)
+                bsim = pixel_sim(bottom[i].edges.bottom, ro[i].edges.top)
+                t += tsim
+                b += bsim 
+            bestHere = min(bestHere,(t, ro,"atop"),(b, ro,"abottom"),key=lambda x:x[0])
        
-        ans.append(bestHere[1]) if bestHere[2] == "atop" else ans.appendleft(bestHere[1]) 
+        ans.append(bestHere[1]) if bestHere[2] == "abottom" else ans.appendleft(bestHere[1]) 
         row_holder.remove(bestHere[1]) 
         
     return ans
@@ -112,13 +117,13 @@ def pixel_sim(img_a, img_b):
 
 if __name__ == '__main__':
     ImageClasses = [] #stores all instance of each Image
-    mypath = "C:/Users/Harjacober/Desktop/data/data_test2_blank/64"
+    mypath = "C:/Users/Harjacober/Desktop/huaweihornocup/my_test_data/64"
     #list all the image files in tne data folder
     for file in listdir(mypath): 
         img_file = join(mypath, file)  
         fragments = getFragments(img_file) #get all fragments of this image file 
         ImageClasses.append(ImageClass(fragments, file))   
-    f = open("my_test_answer2.txt", "w")
+    f = open("data_test1_blank_64_answer.txt", "w")
     i=1
     for each in ImageClasses: #loop through each image one by one
         print(i)
